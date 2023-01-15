@@ -6,7 +6,8 @@
 #include "TF1.h"
 #include "TH2D.h"
 #include "TH1D.h"
-
+#include "TLegend.h"
+#include "TStyle.h"
 
 
 
@@ -38,7 +39,6 @@ int main( int argc, char* argv[] ) {
   tree->SetBranchAddress( "vamp", &vamp );
   tree_ref->SetBranchAddress( "vamp", &vamp_ref );
 
-  std::cout<<"branch vamp setted"<<std::endl;
 
   TH1D* h1 = new TH1D( "vamp", "", 500, -0.1, 0.1 );
 
@@ -51,17 +51,18 @@ int main( int argc, char* argv[] ) {
 
   }
   std::cout<<"first histo filled"<<std::endl;
+  gStyle->SetOptStat(0);
 
-  TCanvas* c1 = new TCanvas( "c1", "", 600., 600. );
+  TCanvas* c1 = new TCanvas( "c1", "", 1200., 800. );
   c1->cd();
- // Double_t scale = h1->GetXaxis()->GetBinWidth(1)/(h1->Integral());
- // h1->Scale(scale);      //metodo3
- // h1->Scale(1./nentries);     //metodo2
- // h1->Scale(1./h1->Integral());  //metodo1
-  h1->Draw("HISTO");
- // h1->DrawNormalized("HISTO");    //metodo6
 
-  TH1D* h2 = new TH1D( "vamp_ref", "", 100, -0.04, 0.04);
+  TLegend* legend = new TLegend(0.7, 0.75, 0.9, 0.9, "HV = 405 V");
+
+ // h1->Scale(1./nentries);     //metodo2
+  h1->Scale(1./h1->Integral("width"));  //metodo1
+ // h1->DrawNormalized("HISTO");    //metodo4
+
+  TH1D* h2 = new TH1D( "vamp_ref", "", 300, -0.04, 0.1);
 
   int nentries_ref = tree_ref->GetEntries();
 
@@ -72,24 +73,26 @@ int main( int argc, char* argv[] ) {
 
   }
   std::cout<<"second histo filled"<<std::endl;
+  gStyle->SetOptStat(0);
   c1->cd();
 
-  int e=0;
-  for(unsigned bin=0; bin<100; ++bin){ 
-  Double_t binContent = h2->GetBinContent(bin);
-  if (binContent == 0) e++;
-  }
-  std::cout<<"empty bins:"<<e<<std::endl;
 
- // Double_t scale2 = h2->GetXaxis()->GetBinWidth(1)/(h2->Integral());
- // h2->Scale(scale2);         //metodo3
- // h2->Scale(100, "nosw2");      //metodo4
- // h2->Scale(1./h2->Integral());   //metodo1
+  h2->Scale(1./h2->Integral("width"));   //metodo1
  // h2->Scale(1./nentries_ref);    //metodo2
-  h2->Scale(h1->Integral()/h2->Integral()); //metodo5
+ // h2->Scale(h1->Integral()/h2->Integral()); //metodo3
+
   h2->SetLineColor(2);
-  h2->Draw("HISTO SAME"); 
- //h2->DrawNormalized( "HISTO SAME");   //metodo6
+  h1->SetLineColor(4); 
+
+  gStyle->SetOptStat(0);
+
+  h2->Draw("HISTO"); 
+  h1->Draw("HISTO SAME");
+ //h2->DrawNormalized( "HISTO SAME");   //metodo4
+
+  legend->AddEntry(h2, "noise");
+  legend->AddEntry(h1, "signal"); 
+  legend->Draw("SAME");
 
   output_f->cd();
   c1->Write();
